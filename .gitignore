@@ -4,3 +4,4 @@ node_modules/
 terv.txt
 .vscode/
 __pycache__/
+.pytest_cache/
