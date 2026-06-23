@@ -76,6 +76,37 @@ class TicketRequest(BaseModel):
         default_factory=list,
         description="List of extra requests (e.g. 'kerekpar', 'kutya')."
     )
+class ConfirmationDecision(str, Enum):
+    megerosit = "megerosit"
+    elutasit = "elutasit"
+    modosit = "modosit"
+    megszakit = "megszakit"
+
+class ConfirmationResponse(BaseModel):
+    """
+    Represents the classification of a user's response to a confirmation request.
+    """
+    decision: ConfirmationDecision = Field(
+        ...,
+        description="The user's decision: megerosit (confirm), elutasit (reject), modosit (modify/change fields), or megszakit (cancel)."
+    )
+    fields_to_modify: Optional[dict] = Field(
+        default=None,
+        description="A dictionary of fields to modify and their new values. Only populated when decision is 'modosit'."
+    )
+
+class OfferSelection(BaseModel):
+    """
+    Represents the user's selection from the presented train offers.
+    """
+    selected_index: Optional[int] = Field(
+        default=None,
+        description="The 0-based index of the selected train offer. Optional, only if an offer was selected."
+    )
+    none_suitable: bool = Field(
+        default=False,
+        description="Flag indicating that none of the offered trains are suitable and the user wants to change search parameters."
+    )
 
 def to_xai_tool(model: Type[BaseModel], name: Optional[str] = None, description: Optional[str] = None):
     """
