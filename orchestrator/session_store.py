@@ -60,6 +60,7 @@ def _init_db() -> None:
                     state TEXT NOT NULL,
                     ticket_request TEXT,
                     search_results TEXT,
+                    selected_offer TEXT,
                     message_history TEXT NOT NULL,
                     updated_at TIMESTAMP NOT NULL
                 )
@@ -111,7 +112,7 @@ def get(chat_id: Any) -> dict:
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT state, ticket_request, search_results, message_history, updated_at
+            SELECT state, ticket_request, search_results, selected_offer, message_history, updated_at
             FROM sessions WHERE chat_id = ?
         """, (cid,))
         row = cursor.fetchone()
@@ -124,11 +125,12 @@ def get(chat_id: Any) -> dict:
             "state": "vár_kérésre",
             "ticket_request": None,
             "search_results": None,
+            "selected_offer": None,
             "message_history": [],
             "updated_at": None
         }
         
-    state, ticket_request_json, search_results_json, message_history_json, updated_at = row
+    state, ticket_request_json, search_results_json, selected_offer_json, message_history_json, updated_at = row
     
     ticket_request = None
     if ticket_request_json is not None:
@@ -142,6 +144,7 @@ def get(chat_id: Any) -> dict:
             ticket_request = None
             
     search_results = json.loads(search_results_json) if search_results_json is not None else None
+    selected_offer = json.loads(selected_offer_json) if selected_offer_json is not None else None
     
     try:
         message_history = json.loads(message_history_json)
@@ -153,6 +156,7 @@ def get(chat_id: Any) -> dict:
         "state": state,
         "ticket_request": ticket_request,
         "search_results": search_results,
+        "selected_offer": selected_offer,
         "message_history": message_history,
         "updated_at": updated_at
     }
@@ -171,6 +175,7 @@ def set(chat_id: Any, session: dict) -> None:
     state = session.get("state", "vár_kérésre")
     ticket_request = session.get("ticket_request")
     search_results = session.get("search_results")
+    selected_offer = session.get("selected_offer")
     message_history = session.get("message_history", [])
     
     # Handle serialization
@@ -182,6 +187,10 @@ def set(chat_id: Any, session: dict) -> None:
     if search_results is not None:
         search_results_json = json.dumps(_to_json_compatible(search_results))
         
+    selected_offer_json = None
+    if selected_offer is not None:
+        selected_offer_json = json.dumps(_to_json_compatible(selected_offer))
+        
     message_history_json = json.dumps(_to_json_compatible(message_history))
     
     updated_at = datetime.now().isoformat()
@@ -191,9 +200,9 @@ def set(chat_id: Any, session: dict) -> None:
         with conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT OR REPLACE INTO sessions (chat_id, state, ticket_request, search_results, message_history, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (cid, state, ticket_request_json, search_results_json, message_history_json, updated_at))
+                INSERT OR REPLACE INTO sessions (chat_id, state, ticket_request, search_results, selected_offer, message_history, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (cid, state, ticket_request_json, search_results_json, selected_offer_json, message_history_json, updated_at))
     finally:
         conn.close()
 
