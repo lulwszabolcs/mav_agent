@@ -131,14 +131,40 @@ def _handle_waiting_for_first_confirmation(chat_id: int, session: dict) -> str:
 
 def _handle_searching(chat_id: int, session: dict) -> str:
     mock_results = [
-        {"train": "IC 503", "departure": "14:05", "arrival": "16:55",
-         "duration": "2h 50m", "price": 3890, "class": "2. osztály"},
-        {"train": "IC 701", "departure": "16:05", "arrival": "18:55",
-         "duration": "2h 50m", "price": 3890, "class": "2. osztály"},
-        {"train": "Személyvonat", "departure": "14:32", "arrival": "18:10",
-         "duration": "3h 38m", "price": 2100, "class": "2. osztály"},
-    ]
-    
+    {
+        "train": "IC 503",
+        "origin": "Budapest Keleti",
+        "destination": "Pécs",
+        "departure": "14:05",
+        "arrival": "16:55",
+        "duration": "2h 50m",
+        "price": 3890,
+        "ticket_class": "2. osztály",
+        "offer_id": "mock_001"
+    },
+    {
+        "train": "IC 701",
+        "origin": "Budapest Keleti",
+        "destination": "Pécs",
+        "departure": "16:05",
+        "arrival": "18:55",
+        "duration": "2h 50m",
+        "price": 3890,
+        "ticket_class": "2. osztály",
+        "offer_id": "mock_002"
+    },
+    {
+        "train": "Személyvonat 8841",
+        "origin": "Budapest Keleti",
+        "destination": "Pécs",
+        "departure": "14:32",
+        "arrival": "18:10",
+        "duration": "3h 38m",
+        "price": 2100,
+        "ticket_class": "2. osztály",
+        "offer_id": "mock_003"
+    },
+]
     session["search_results"] = mock_results
     _change_state(session, chat_id, STATE_WAITING_FOR_CONFIRMATION_2)
     
