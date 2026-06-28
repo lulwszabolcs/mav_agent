@@ -20,6 +20,17 @@ from typing import Any, Dict
 
 import orchestrator.session_store as session_store
 from nlu.parser import parse_ticket_request, parse_confirmation, parse_offer_selection
+from telegram.messages import (
+    MSG_CANCEL,
+    MSG_PAYMENT_SUCCESS,
+    MSG_PAYMENT_CANCELLED,
+    MSG_ERROR,
+    MSG_INVALID_SELECTION,
+    MSG_RESTART,
+    format_ticket_summary,
+    format_search_results,
+    format_final_confirmation,
+)
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -31,25 +42,6 @@ STATE_SEARCHING = "keres"
 STATE_WAITING_FOR_CONFIRMATION_2 = "vár_megerősítés_2"
 STATE_PAYING = "fizet"
 STATE_DONE = "kész"
-
-# Passenger type and seat preference mapping for Hungarian formatting
-PASSENGER_TYPE_MAP = {
-    "felnott": "felnőtt",
-    "diak_26_alatt": "diák (26 év alatt)",
-    "diak_26_felett": "diák (26 év felett)",
-    "nyugdijas": "nyugdíjas",
-    "hatvanot_felett": "65 év feletti",
-    "gyerek": "gyermek"
-}
-
-SEAT_PREFERENCE_MAP = {
-    "ablak": "ablak",
-    "folyoso": "folyosó",
-    "asztal": "asztal",
-    "fulkes": "fülkés",
-    "termes": "termes"
-}
-
 
 def _change_state(session: dict, chat_id: int, new_state: str) -> None:
     """
@@ -78,44 +70,7 @@ def _format_ticket_request_summary(req: Any) -> str:
         req_dict = req.model_dump()
     else:
         req_dict = req if isinstance(req, dict) else {}
-
-    departure = req_dict.get("departure_station") or "Nincs megadva"
-    destination = req_dict.get("destination_station") or "Nincs megadva"
-    dep_time = req_dict.get("departure_time_raw") or req_dict.get("departure_time_iso") or "Nincs megadva"
-
-    passengers_raw = req_dict.get("passengers", [])
-    passengers_list = []
-    for p in passengers_raw:
-        if hasattr(p, "passenger_type"):
-            ptype = p.passenger_type
-            count = p.count
-        elif isinstance(p, dict):
-            ptype = p.get("passenger_type")
-            count = p.get("count", 1)
-        else:
-            continue
-        ptype_val = _get_value(ptype)
-        ptype_hu = PASSENGER_TYPE_MAP.get(ptype_val, ptype_val)
-        passengers_list.append(f"{count} {ptype_hu}")
-    passengers_str = ", ".join(passengers_list) if passengers_list else "Nincs megadva"
-
-    tclass = _get_value(req_dict.get("ticket_class"))
-    ticket_class_str = f"{tclass}. osztály" if tclass else "Nincs megadva"
-
-    seat_prefs = req_dict.get("seat_preferences", [])
-    seat_pref_list = [SEAT_PREFERENCE_MAP.get(_get_value(sp), _get_value(sp)) for sp in seat_prefs]
-    seat_pref_str = ", ".join(seat_pref_list) if seat_pref_list else "Nincs megadva"
-
-    return (
-        f"🔍 Ezt értettem:\n"
-        f"Indulás: {departure}\n"
-        f"Érkezés: {destination}\n"
-        f"Időpont: {dep_time}\n"
-        f"Utasok: {passengers_str}\n"
-        f"Osztály: {ticket_class_str}\n"
-        f"Helytulajdonság: {seat_pref_str}\n\n"
-        f"Helyes? (igen / nem / módosítás)"
-    )
+    return format_ticket_summary(req_dict)
 
 
 def _handle_waiting_for_request(chat_id: int, session: dict) -> str:
@@ -166,7 +121,7 @@ def _handle_waiting_for_first_confirmation(chat_id: int, session: dict) -> str:
         elif decision in ("elutasit", "megszakit"):
             session_store.delete(chat_id)
             session["_deleted"] = True
-            return "❌ Rendben, a foglalás megszakítva. Ha újat szeretnél indítani, csak írj!"
+            return MSG_CANCEL
             
     elif status == "needs_clarification":
         return result.get("message", "Nem sikerült értelmezni a megerősítést.")
@@ -187,13 +142,7 @@ def _handle_searching(chat_id: int, session: dict) -> str:
     session["search_results"] = mock_results
     _change_state(session, chat_id, STATE_WAITING_FOR_CONFIRMATION_2)
     
-    return (
-        "🚆 Elérhető vonatok:\n"
-        "1. IC 503 — 14:05 → 16:55 (2h 50m) — 3 890 Ft\n"
-        "2. IC 701 — 16:05 → 18:55 (2h 50m) — 3 890 Ft\n"
-        "3. Személyvonat — 14:32 → 18:10 (3h 38m) — 2 100 Ft\n\n"
-        "Melyiket szeretnéd? (pl. 'az elsőt', '2-es', stb.)"
-    )
+    return format_search_results(mock_results)
 
 
 def _handle_waiting_for_second_confirmation(chat_id: int, session: dict) -> str:
@@ -208,29 +157,18 @@ def _handle_waiting_for_second_confirmation(chat_id: int, session: dict) -> str:
         if none_suitable:
             session_store.delete(chat_id)
             session["_deleted"] = True
-            return "🔄 Rendben, kezdjük elölről! Írj egy új jegykérést."
+            return MSG_RESTART
             
         if selected_index is not None:
             search_results = session.get("search_results", [])
             if not (0 <= selected_index < len(search_results)):
-                return "❌ Érvénytelen választás, kérlek válassz a listából!"
+                return MSG_INVALID_SELECTION
                 
             session["selected_offer"] = search_results[selected_index]
             _change_state(session, chat_id, STATE_PAYING)
             
             offer = session["selected_offer"]
-            train = offer.get("train", "")
-            departure = offer.get("departure", "")
-            arrival = offer.get("arrival", "")
-            price = offer.get("price", 0)
-            price_formatted = f"{price:,}".replace(",", " ")
-            
-            return (
-                f"⚠️ Végső megerősítés:\n"
-                f"{train} — {departure} → {arrival}\n"
-                f"Ár: {price_formatted} Ft\n\n"
-                f"Fizetek? (igen / nem)"
-            )
+            return format_final_confirmation(offer)
             
     elif status == "needs_clarification":
         return result.get("message", "Nem sikerült értelmezni a választást.")
@@ -262,7 +200,7 @@ def _handle_payment(chat_id: int, session: dict) -> str:
                 
             session_store.delete(chat_id)
             session["_deleted"] = True
-            return "✅ Jegy sikeresen megvásárolva! Jó utat! 🚆"
+            return MSG_PAYMENT_SUCCESS
             
         elif decision in ("elutasit", "megszakit"):
             log_entry = {
@@ -276,7 +214,7 @@ def _handle_payment(chat_id: int, session: dict) -> str:
                 
             session_store.delete(chat_id)
             session["_deleted"] = True
-            return "❌ Fizetés megszakítva. Ha újra szeretnél foglalni, csak írj!"
+            return MSG_PAYMENT_CANCELLED
             
     elif status == "needs_clarification":
         return result.get("message", "Nem sikerült értelmezni a megerősítést.")
@@ -316,7 +254,7 @@ def handle_message(chat_id: int, user_message: str) -> str:
             session_store.delete(chat_id)
         except Exception:
             pass
-        return "⚠️ Váratlan hiba történt, a foglalás megszakadt. Kérlek kezdd újra."
+        return MSG_ERROR
         
     try:
         response_text = handlers[state](chat_id, session)
@@ -335,4 +273,4 @@ def handle_message(chat_id: int, user_message: str) -> str:
             session_store.delete(chat_id)
         except Exception:
             pass
-        return "⚠️ Váratlan hiba történt, a foglalás megszakadt. Kérlek kezdd újra."
+        return MSG_ERROR

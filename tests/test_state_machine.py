@@ -69,13 +69,13 @@ def test_handle_waiting_for_request_ready(mock_parse):
     response = state_machine.handle_message(chat_id, "Budapestről Szegedre szeretnék menni ma délután")
     
     # Assertions
-    assert "🔍 Ezt értettem:" in response
-    assert "Indulás: Budapest" in response
-    assert "Érkezés: Szeged" in response
-    assert "Időpont: ma délután" in response
-    assert "Utasok: 1 felnőtt" in response
-    assert "Osztály: 2. osztály" in response
-    assert "Helyes? (igen / nem / módosítás)" in response
+    assert "Ezt értettem:" in response
+    assert "Indulás:        Budapest" in response
+    assert "Érkezés:        Szeged" in response
+    assert "Időpont:        ma délután" in response
+    assert "Utasok:         1x felnott" in response
+    assert "Osztály:        2. osztály" in response
+    assert "Helyes? (igen / nem / mondd meg mit változtassak)" in response
     
     # Verify DB state has updated
     session = session_store.get(chat_id)
@@ -115,7 +115,7 @@ def test_handle_waiting_for_first_confirmation_megerosit(mock_parse):
     response = state_machine.handle_message(chat_id, "Igen, helyes")
     
     # Ready confirmation triggers search and returns the formatted train list
-    assert "🚆 Elérhető vonatok:" in response
+    assert "Elérhető vonatok:" in response
     assert "1. IC 503" in response
     assert "Melyiket szeretnéd?" in response
     
@@ -144,8 +144,8 @@ def test_handle_waiting_for_first_confirmation_modosit(mock_parse):
     
     response = state_machine.handle_message(chat_id, "nem, Debrecenből")
     
-    assert "Indulás: Debrecen" in response
-    assert "Érkezés: Szeged" in response
+    assert "Indulás:        Debrecen" in response
+    assert "Érkezés:        Szeged" in response
     
     # State remains
     session = session_store.get(chat_id)
@@ -217,10 +217,12 @@ def test_handle_offer_selection_valid(mock_parse):
     
     response = state_machine.handle_message(chat_id, "a másodikat")
     
-    assert "⚠️ Végső megerősítés:" in response
-    assert "IC 701 — 16:05 → 18:55" in response
-    assert "Ár: 4 200 Ft" in response
-    assert "Fizetek? (igen / nem)" in response
+    assert "Vegso megerosites:" in response
+    assert "Vonat:    IC 701" in response
+    assert "Indulás:  16:05" in response
+    assert "Érkezés:  18:55" in response
+    assert "Ár:       4 200 Ft" in response
+    assert "Biztosan fizetek? (igen / nem)" in response
     
     session = session_store.get(chat_id)
     assert session["state"] == state_machine.STATE_PAYING
@@ -265,7 +267,7 @@ def test_handle_payment_confirm(mock_parse):
     
     response = state_machine.handle_message(chat_id, "igen, fizessük")
     
-    assert "Jegy sikeresen megvásárolva" in response
+    assert "jegy sikeresen megvasarolva" in response.lower()
     
     # Session should be deleted
     session = session_store.get(chat_id)
