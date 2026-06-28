@@ -1,5 +1,5 @@
 import pytest
-from telegram.messages import (
+from telegram_bot.messages import (
     MSG_SEARCHING,
     MSG_CANCEL,
     MSG_PAYMENT_SUCCESS,

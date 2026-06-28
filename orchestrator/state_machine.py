@@ -20,7 +20,7 @@ from typing import Any, Dict
 
 import orchestrator.session_store as session_store
 from nlu.parser import parse_ticket_request, parse_confirmation, parse_offer_selection
-from telegram.messages import (
+from telegram_bot.messages import (
     MSG_CANCEL,
     MSG_PAYMENT_SUCCESS,
     MSG_PAYMENT_CANCELLED,
