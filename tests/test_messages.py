@@ -79,6 +79,8 @@ def test_format_search_results():
 def test_format_final_confirmation():
     offer = {
         "train": "IC 701",
+        "origin": "Budapest Keleti",
+        "destination": "Pécs",
         "departure": "16:05",
         "arrival": "18:55",
         "duration": "2h 50m",
@@ -88,8 +90,8 @@ def test_format_final_confirmation():
     
     assert "Vegso megerosites:\n" in res
     assert "Vonat:    IC 701" in res
-    assert "Indulás:  16:05" in res
-    assert "Érkezés:  18:55" in res
+    assert "Indulás:  Budapest Keleti (16:05)" in res
+    assert "Érkezés:  Pécs (18:55)" in res
     assert "Menetidő: 2h 50m" in res
     assert "Ár:       3 890 Ft" in res
     assert "Biztosan fizetek? (igen / nem)" in res

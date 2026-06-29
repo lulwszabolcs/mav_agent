@@ -132,8 +132,10 @@ def format_final_confirmation(offer: dict) -> str:
     Formats the final confirmation summary before payment.
     """
     train = offer.get("train", "")
-    departure = offer.get("departure", "")
-    arrival = offer.get("arrival", "")
+    origin = offer.get("origin", "")
+    destination = offer.get("destination", "")
+    departure_time = offer.get("departure", "")
+    arrival_time = offer.get("arrival", "")
     duration = offer.get("duration", "")
     price = offer.get("price", 0)
     price_formatted = f"{price:,}".replace(",", " ")
@@ -141,8 +143,8 @@ def format_final_confirmation(offer: dict) -> str:
     return (
         "Vegso megerosites:\n\n"
         f"Vonat:    {train}\n"
-        f"Indulás:  {departure}\n"
-        f"Érkezés:  {arrival}\n"
+        f"Indulás:  {origin} ({departure_time})\n"
+        f"Érkezés:  {destination} ({arrival_time})\n"
         f"Menetidő: {duration}\n"
         f"Ár:       {price_formatted} Ft\n\n"
         "Biztosan fizetek? (igen / nem)"

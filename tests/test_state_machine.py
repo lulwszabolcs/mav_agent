@@ -205,8 +205,8 @@ def test_handle_offer_selection_valid(mock_parse):
     session_store.set(chat_id, {
         "state": state_machine.STATE_WAITING_FOR_CONFIRMATION_2,
         "search_results": [
-            {"train": "IC 503", "departure": "14:05", "arrival": "16:55", "price": 3890},
-            {"train": "IC 701", "departure": "16:05", "arrival": "18:55", "price": 4200}
+            {"train": "IC 503", "origin": "Budapest Keleti", "destination": "Pécs", "departure": "14:05", "arrival": "16:55", "price": 3890},
+            {"train": "IC 701", "origin": "Budapest Keleti", "destination": "Pécs", "departure": "16:05", "arrival": "18:55", "price": 4200}
         ],
         "message_history": []
     })
@@ -220,8 +220,8 @@ def test_handle_offer_selection_valid(mock_parse):
     
     assert "Vegso megerosites:" in response
     assert "Vonat:    IC 701" in response
-    assert "Indulás:  16:05" in response
-    assert "Érkezés:  18:55" in response
+    assert "Indulás:  Budapest Keleti (16:05)" in response
+    assert "Érkezés:  Pécs (18:55)" in response
     assert "Ár:       4 200 Ft" in response
     assert "Biztosan fizetek? (igen / nem)" in response
     
