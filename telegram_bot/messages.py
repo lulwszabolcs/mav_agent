@@ -48,7 +48,7 @@ def format_ticket_summary(ticket_request: dict) -> str:
     """
     departure_station = ticket_request.get("departure_station") or ""
     destination_station = ticket_request.get("destination_station") or ""
-    departure_time_raw = ticket_request.get("departure_time_raw") or ""
+    departure_time_raw = ticket_request.get("departure_time_raw") or ticket_request.get("departure_time_iso") or ""
 
     # Format passengers: "{count}x {passenger_type}"
     passengers_raw = ticket_request.get("passengers") or []

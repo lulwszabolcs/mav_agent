@@ -7,7 +7,7 @@ and validates the returned schemas using Pydantic models.
 from typing import List, Dict, Any
 from pydantic import ValidationError
 
-from nlu.client import XAIClient
+from nlu.client import XAIClient, get_system_prompt
 from nlu.schema import (
     TicketRequest,
     ConfirmationResponse,
@@ -26,15 +26,7 @@ def parse_ticket_request(messages: List[Dict[str, str]]) -> Dict[str, Any]:
     """
     tool_def = to_xai_tool(TicketRequest)
     
-    system_prompt = (
-        "Te egy segítőkész MÁV vonatjegy-foglaló asszisztens vagy. "
-        "A feladatod a felhasználó jegyigényeinek strukturált kinyerése a TicketRequest eszközzel.\n\n"
-        "FONTOS SZABÁLY:\n"
-        "Ha az indulási állomás (departure_station), az érkezési állomás (destination_station) "
-        "vagy a gép által értelmezhető indulási idő (departure_time_iso) hiányzik a beszélgetésből "
-        "vagy kétértelmű, SOHA NE hívd meg a TicketRequest eszközt. Ehelyett válaszolj magyarul, "
-        "és kérdezz rá a hiányzó vagy nem egyértelmű információkra."
-    )
+    system_prompt = get_system_prompt()
     
     tool_name, payload = client.call([tool_def], system_prompt, messages)
     
