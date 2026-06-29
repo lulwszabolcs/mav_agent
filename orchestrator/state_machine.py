@@ -287,6 +287,7 @@ def handle_message(chat_id: int, user_message: str) -> str:
         
         # 5. Save the updated session if it wasn't deleted
         if not session.get("_deleted", False):
+            session["message_history"].append({"role": "assistant", "content": response_text})
             session_store.set(chat_id, session)
             
         return response_text

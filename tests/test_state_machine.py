@@ -81,7 +81,8 @@ def test_handle_waiting_for_request_ready(mock_parse):
     session = session_store.get(chat_id)
     assert session["state"] == state_machine.STATE_WAITING_FOR_CONFIRMATION_1
     assert session["ticket_request"].departure_station == "Budapest"
-    assert session["message_history"][-1]["content"] == "Budapestről Szegedre szeretnék menni ma délután"
+    assert session["message_history"][-2]["content"] == "Budapestről Szegedre szeretnék menni ma délután"
+    assert "Ezt értettem:" in session["message_history"][-1]["content"]
 
 
 @patch("orchestrator.state_machine.parse_ticket_request")
