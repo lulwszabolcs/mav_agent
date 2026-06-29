@@ -185,3 +185,43 @@ def test_db_auto_creation_and_directory(tmp_path):
     
     assert test_dir.exists()
     assert test_db.exists()
+
+
+def test_get_expired_session_returns_default(setup_test_db):
+    from datetime import datetime, timedelta
+    chat_id = 123456
+    
+    # 1. Create a session in the store
+    session_data = {
+        "state": "fizet",
+        "ticket_request": None,
+        "search_results": None,
+        "message_history": []
+    }
+    session_store.set(chat_id, session_data)
+    
+    # 2. Manipulate SQLite directly to set updated_at to the past (e.g. 20 minutes ago)
+    past_time = (datetime.now() - timedelta(minutes=20)).isoformat()
+    
+    conn = sqlite3.connect(session_store.DB_PATH)
+    try:
+        with conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE sessions SET updated_at = ? WHERE chat_id = ?", (past_time, chat_id))
+    finally:
+        conn.close()
+        
+    # 3. Retrieve the session; it should be expired and return default
+    retrieved = session_store.get(chat_id)
+    assert retrieved["state"] == "vár_kérésre"
+    assert retrieved["updated_at"] is None
+    
+    # 4. Verify that the row is indeed deleted from the database
+    conn = sqlite3.connect(session_store.DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM sessions WHERE chat_id = ?", (chat_id,))
+        count = cursor.fetchone()[0]
+        assert count == 0
+    finally:
+        conn.close()

@@ -34,6 +34,7 @@ if allowed_raw:
             ALLOWED_CHAT_IDS.append(int(cid))
 
 DB_PATH = "data/sessions.db"
+SESSION_TIMEOUT_SECONDS = 900
 
 # Try to import TicketRequest for parsing back from database
 try:
@@ -132,6 +133,24 @@ def get(chat_id: Any) -> dict:
         
     state, ticket_request_json, search_results_json, selected_offer_json, message_history_json, updated_at = row
     
+    # Check for session expiration
+    try:
+        updated_dt = datetime.fromisoformat(updated_at)
+        if (datetime.now() - updated_dt).total_seconds() > SESSION_TIMEOUT_SECONDS:
+            logger.info(f"session_store | get | session expired for chat_id={cid}, resetting state")
+            delete(cid)
+            return {
+                "chat_id": cid,
+                "state": "vár_kérésre",
+                "ticket_request": None,
+                "search_results": None,
+                "selected_offer": None,
+                "message_history": [],
+                "updated_at": None
+            }
+    except Exception as e:
+        logger.warning(f"session_store | get | error checking session expiry: {e}")
+        
     ticket_request = None
     if ticket_request_json is not None:
         try:
