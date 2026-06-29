@@ -13,16 +13,51 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 
 @pytest.mark.anyio
-async def test_start_handler():
+@patch("telegram_bot.handlers.session_store.delete")
+async def test_start_handler_success(mock_delete):
     update = MagicMock(spec=Update)
+    update.effective_chat.id = 123456
     update.message = AsyncMock()
     context = MagicMock(spec=ContextTypes.DEFAULT_TYPE)
     
     await start_handler(update, context)
     
+    mock_delete.assert_called_once_with(123456)
     update.message.reply_text.assert_called_once()
     args, _ = update.message.reply_text.call_args
     assert "Üdvözöllek! MÁV jegyfoglaló asszisztens vagyok." in args[0]
+
+
+@pytest.mark.anyio
+@patch("telegram_bot.handlers.session_store.delete")
+async def test_start_handler_unauthorized(mock_delete):
+    mock_delete.side_effect = PermissionError("Access denied")
+    
+    update = MagicMock(spec=Update)
+    update.effective_chat.id = 999999
+    update.message = AsyncMock()
+    context = MagicMock(spec=ContextTypes.DEFAULT_TYPE)
+    
+    await start_handler(update, context)
+    
+    mock_delete.assert_called_once_with(999999)
+    update.message.reply_text.assert_called_once_with(MSG_UNAUTHORIZED)
+
+
+@pytest.mark.anyio
+@patch("telegram_bot.handlers.session_store.delete")
+async def test_start_handler_error(mock_delete):
+    mock_delete.side_effect = Exception("DB connection error")
+    
+    update = MagicMock(spec=Update)
+    update.effective_chat.id = 123456
+    update.message = AsyncMock()
+    context = MagicMock(spec=ContextTypes.DEFAULT_TYPE)
+    
+    await start_handler(update, context)
+    
+    mock_delete.assert_called_once_with(123456)
+    update.message.reply_text.assert_called_once_with(MSG_ERROR)
 
 
 @pytest.mark.anyio

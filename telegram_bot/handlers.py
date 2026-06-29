@@ -2,6 +2,7 @@ import logging
 
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+import orchestrator.session_store as session_store
 from orchestrator.state_machine import handle_message
 from telegram_bot.messages import MSG_UNAUTHORIZED, MSG_ERROR
 
@@ -13,6 +14,24 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     """
     Handles the /start command.
     """
+    if not update.effective_chat or not update.message:
+        return
+
+    chat_id = update.effective_chat.id
+
+    try:
+        # Reset the session for the chat if it exists.
+        # This will also raise a PermissionError if the chat_id is not in ALLOWED_CHAT_IDS.
+        session_store.delete(chat_id)
+    except PermissionError:
+        logger.warning(f"handlers | jogosulatlan hozzáférés /start paranccsal | chat_id={chat_id}")
+        await update.message.reply_text(MSG_UNAUTHORIZED)
+        return
+    except Exception as e:
+        logger.error(f"handlers | hiba a session törlésekor a /start parancsnál | chat_id={chat_id}: {e}", exc_info=True)
+        await update.message.reply_text(MSG_ERROR)
+        return
+
     text = (
         "Üdvözöllek! MÁV jegyfoglaló asszisztens vagyok.\n\n"
         "Írd le, milyen jegyet szeretnél, és én megveszem helyetted.\n"
