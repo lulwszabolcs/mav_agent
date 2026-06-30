@@ -76,6 +76,44 @@ class TicketRequest(BaseModel):
         default_factory=list,
         description="List of extra requests (e.g. 'kerekpar', 'kutya')."
     )
+class TicketRequestModification(BaseModel):
+    """
+    Represents the fields of a ticket request that can be modified.
+    All fields are optional, so the user/LLM only needs to provide the fields they want to change.
+    """
+    departure_station: Optional[str] = Field(
+        default=None,
+        description="The departure station (honnan). E.g., 'Budapest', 'Győr', 'Debrecen'."
+    )
+    destination_station: Optional[str] = Field(
+        default=None,
+        description="The destination station (hova). E.g., 'Szeged', 'Pécs', 'Sopron'."
+    )
+    departure_time_raw: Optional[str] = Field(
+        default=None,
+        description="The departure date/time as written by the user. E.g., 'ma délután', 'holnap reggel'."
+    )
+    departure_time_iso: Optional[str] = Field(
+        default=None,
+        description="The departure date/time resolved/parsed into ISO 8601 format (YYYY-MM-DDTHH:MM). E.g., '2026-06-23T14:30'."
+    )
+    passengers: Optional[List[Passenger]] = Field(
+        default=None,
+        description="List of passengers and their specific discounts/types."
+    )
+    ticket_class: Optional[TicketClass] = Field(
+        default=None,
+        description="The requested carriage/travel class (1 for 1st class, 2 for 2nd class)."
+    )
+    seat_preferences: Optional[List[SeatPreference]] = Field(
+        default=None,
+        description="List of seat preferences."
+    )
+    extras: Optional[List[str]] = Field(
+        default=None,
+        description="List of extra requests (e.g. 'kerekpar', 'kutya')."
+    )
+
 class ConfirmationDecision(str, Enum):
     megerosit = "megerosit"
     elutasit = "elutasit"
@@ -90,9 +128,9 @@ class ConfirmationResponse(BaseModel):
         ...,
         description="The user's decision: megerosit (confirm), elutasit (reject), modosit (modify/change fields), or megszakit (cancel)."
     )
-    fields_to_modify: Optional[dict] = Field(
+    fields_to_modify: Optional[TicketRequestModification] = Field(
         default=None,
-        description="A dictionary of fields to modify and their new values. Only populated when decision is 'modosit'."
+        description="A structured object of fields to modify. Only populated when decision is 'modosit'."
     )
 
 class OfferSelection(BaseModel):

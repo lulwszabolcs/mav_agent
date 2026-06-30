@@ -60,7 +60,8 @@ def test_parse_confirmation_success():
         assert result["status"] == "ready"
         assert isinstance(result["data"], ConfirmationResponse)
         assert result["data"].decision == ConfirmationDecision.modosit
-        assert result["data"].fields_to_modify == {"departure_station": "Debrecen"}
+        assert result["data"].fields_to_modify is not None
+        assert result["data"].fields_to_modify.model_dump(exclude_unset=True) == {"departure_station": "Debrecen"}
 
 def test_parse_confirmation_validation_error():
     mock_payload = {

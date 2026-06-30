@@ -106,7 +106,14 @@ def _handle_waiting_for_first_confirmation(chat_id: int, session: dict) -> str:
             return _handle_searching(chat_id, session)
             
         elif decision == "modosit":
-            fields_to_modify = getattr(data, "fields_to_modify", {}) or {}
+            fields_obj = getattr(data, "fields_to_modify", None)
+            if hasattr(fields_obj, "model_dump"):
+                fields_to_modify = fields_obj.model_dump(exclude_unset=True)
+            elif isinstance(fields_obj, dict):
+                fields_to_modify = fields_obj
+            else:
+                fields_to_modify = {}
+                
             req = session.get("ticket_request", {})
             
             if isinstance(req, dict):
