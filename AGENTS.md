@@ -58,8 +58,9 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## 5. Keep Documentation Sync
 
-**Ensure documentation matches implementation.**
+**Ensure documentation matches implementation and is written in English.**
 
+- Write and maintain all project documentation (including README, ARCHITECTURE, TODO, etc.) strictly in English.
 - After making any code or structural changes (especially regarding project layout, database schemas, state machine states, or modular dependencies), evaluate if these changes impact the system architecture.
 - If so, update ARCHITECTURE.md to keep it in sync with the current implementation.
 
