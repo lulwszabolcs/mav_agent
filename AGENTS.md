@@ -56,6 +56,13 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Keep Documentation Sync
+
+**Ensure documentation matches implementation.**
+
+- After making any code or structural changes (especially regarding project layout, database schemas, state machine states, or modular dependencies), evaluate if these changes impact the system architecture.
+- If so, update ARCHITECTURE.md to keep it in sync with the current implementation.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
